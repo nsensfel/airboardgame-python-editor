@@ -5,38 +5,77 @@ import json
 ################################################################################
 #### ABG ATTRIBUTE VALUE CLASSES ###############################################
 ################################################################################
+class ABGAssert:
+	def ensure (cond: bool, message: str):
+		if not cond:
+			raise Exception(message)
 
 class ABGBorderStyle:
 	COLLECTION = set()
 
 	def define (key):
-		assert isinstance(key, str)
-		assert (key not in ABGBorderStyle.COLLECTION)
+		ABGAssert.ensure(
+			isinstance(key, str),
+			"ABGBorderStyle keys must be strings. " + str(key) + " is not."
+		)
+
+		key = key.lower()
+
+		ABGAssert.ensure(
+			(key not in ABGBorderStyle.COLLECTION),
+			"Duplicate definition of Border Style " + key + "."
+		)
 
 		ABGBorderStyle.COLLECTION.add(key)
 
 		return key
 
 	def validate (value):
-		assert value in ABGBorderStyle.COLLECTION
+		ABGAssert.ensure(
+			isinstance(value, str),
+			"Border Style must be strings. " + str(value) + " is not."
+		)
+		ABGAssert.ensure(
+			value in ABGBorderStyle.COLLECTION,
+			"Unknown Border Style: " + value + "."
+		)
 
 class ABGLabelPosition:
 	COLLECTION = set()
 
 	def define (key):
-		assert isinstance(key, str)
-		assert (key not in ABGLabelPosition.COLLECTION)
+		ABGAssert.ensure(
+			isinstance(key, str),
+			"ABGLabelPosition keys must be strings. " + str(key) + " is not."
+		)
+
+		key = key.lower()
+
+		ABGAssert.ensure(
+			(key not in ABGLabelPosition.COLLECTION),
+			"Duplicate definition of Label Position " + key + "."
+		)
 
 		ABGLabelPosition.COLLECTION.add(key)
 
 		return key
 
 	def validate (value):
-		assert value in ABGLabelPosition.COLLECTION
+		ABGAssert.ensure(
+			isinstance(value, str),
+			"Label Position must be strings. " + str(value) + " is not."
+		)
+		ABGAssert.ensure(
+			value in ABGLabelPosition.COLLECTION,
+			"Unknown Label Position: " + value + "."
+		)
 
 class ABGColor:
 	def validate (value):
-		assert isinstance(value, str)
+		ABGAssert.ensure(
+			isinstance(value, str),
+			"Colors must be strings. " + str(value) + " is not."
+		)
 
 		# TODO
 
@@ -51,14 +90,31 @@ class ABGAttribute:
 	COLLECTION = dict()
 
 	def define (key, assertedClass, specialCheck, fromJson = None, toJson = None):
-		assert isinstance(key, str)
-		assert (key not in ABGAttribute.COLLECTION)
+		ABGAssert.ensure(
+			isinstance(key, str),
+			"ABGAttribute keys must be strings. " + str(key) + " is not."
+		)
+		ABGAssert.ensure(
+			(key not in ABGAttribute.COLLECTION),
+			"Duplicate definition of Attribute " + key + "."
+		)
 
 		result = ABGAttribute(key, assertedClass, specialCheck, fromJson, toJson)
 
 		ABGAttribute.COLLECTION[key] = result
 
 		return  result
+
+	def ensureNumeral (value):
+		if isinstance(value, int) or isinstance(value, float):
+			return value
+
+		try:
+			return int(value)
+		except:
+			pass
+
+		return float(value)
 
 	def __init__ (this, key, assertedClass, specialCheck, fromJson, toJson):
 		this.key = key
@@ -68,9 +124,57 @@ class ABGAttribute:
 		this.toJson = toJson
 
 	def validate (this, value):
-		#print("Is this a valid " + this.key + "? " + str(value))
+		if isinstance(this.assertedClass, list):
+			matched = False
 
-		assert isinstance(value, this.assertedClass)
+			for i in this.assertedClass:
+				if i is None and value is None:
+					matched = True
+					break
+
+				if isinstance(value, i):
+					matched = True
+					break
+
+			ABGAssert.ensure(
+				matched,
+				(
+					"The "
+					+ this.key
+					+ " attribute accepts values of the following types: "
+					+ ", ".join([str(e) for e in this.assertedClass])
+					+ ". The value "
+					+ str(value)
+					+ " is not compatible."
+				)
+			)
+
+		elif this.assertedClass is not None:
+			ABGAssert.ensure(
+				isinstance(value, this.assertedClass),
+				(
+					"The "
+					+ this.key
+					+ " attribute accepts values of the type: "
+					+ str(this.assertedClass)
+					+ ". The value "
+					+ str(value)
+					+ " is not compatible."
+				)
+			)
+
+		else:
+			ABGAssert.ensure(
+				(value is None),
+				(
+					"The "
+					+ this.key
+					+ " attribute accepts no values other than None."
+					+ ". The value "
+					+ str(value)
+					+ " is not compatible."
+				)
+			)
 
 		if this.specialCheck is not None:
 			this.specialCheck(value)
@@ -81,8 +185,8 @@ class ABGAttribute:
 		return this.key
 
 class ABGAttributesHaver:
-	def __init__ (this, attributes, attributesHijacking = dict()):
-		this.attributesHijacking = attributesHijacking
+	def __init__ (this, attributes, hijackedAttributes = dict()):
+		this.hijackedAttributes = hijackedAttributes
 
 		for (key, value) in attributes.items():
 			attribute = this.getAttributeFromKey(key)
@@ -91,8 +195,8 @@ class ABGAttributesHaver:
 		this.attributes = attributes
 
 	def getAttributeFromKey (this, key):
-		if key in this.attributesHijacking:
-			return this.attributesHijacking[key]
+		if key in this.hijackedAttributes:
+			return this.hijackedAttributes[key]
 		else:
 			return ABGAttribute.COLLECTION[key]
 
@@ -105,7 +209,10 @@ class ABGAttributesHaver:
 		else:
 			key = attribute.getKey()
 
-		assert key in this.attributes
+		ABGAssert.ensure(
+			key in this.attributes,
+			"There is no " + key + " attribute for this."
+		)
 
 		attribute.validate(value)
 
@@ -122,7 +229,10 @@ class ABGAttributesHaver:
 		else:
 			key = attribute.getKey()
 
-		assert key in this.attributes
+		ABGAssert.ensure(
+			key in this.attributes,
+			"There is no " + key + " attribute for this."
+		)
 
 		return this.attributes[key]
 
@@ -135,15 +245,23 @@ class ABGAttributesHaver:
 
 				for i in value:
 					if (isinstance(i, dict)):
-						assert attribute.fromJson is not None
+						ABGAssert.ensure(
+							(attribute.fromJson is not None),
+							"Missing Python class to parse: " + str(i) + "."
+						)
 
 						v = None
 
 						if (attribute.fromJson == ABGItem):
-							assert "type" in i
+							ABGAssert.ensure(
+								("type" in i),
+								"This Item entry has no \"type\" attribute."
+							)
+
 							v = ABGItem.createInstanceOf(i["type"])
 						else:
 							v = attribute.fromJson()
+
 						v.pullAttributesFromJson(i)
 
 						l.append(v)
@@ -151,14 +269,22 @@ class ABGAttributesHaver:
 						l.append(i)
 
 				this.setAttributeValue(key, l)
+
 			elif (isinstance(value, dict)):
-				assert attribute.fromJson is not None
+				ABGAssert.ensure(
+					(attribute.fromJson is not None),
+					"Missing Python class to parse: " + str(value) + "."
+				)
+
 				v = attribute.fromJson()
 				v.pullAttributesFromJson(value)
 
 				this.setAttributeValue(key, v)
 			else:
-				this.setAttributeValue(key, value)
+				if attribute.fromJson is not None:
+					this.setAttributeValue(key, attribute.fromJson(value))
+				else:
+					this.setAttributeValue(key, value)
 
 		return this
 
@@ -168,15 +294,16 @@ class ABGAttributesHaver:
 			if (isinstance(value, list)):
 				l = []
 				for i in value:
-					if (isinstance(i, ABGAttributeHaver)):
+					if (isinstance(i, ABGAttributesHaver)):
 						d = dict()
 						if (attribute.toJson):
 							attribute.toJson(i, d)
-						value.pushAttributesToJson(d)
+						i.pushAttributesToJson(d)
 						l.append(d)
 					else:
 						l.append(i)
-			elif (isinstance(value, ABGAttributeHaver)):
+				attributes[key] = l
+			elif (isinstance(value, ABGAttributesHaver)):
 				d = dict()
 				value.pushAttributesToJson(d)
 				attributes[key] = d
@@ -206,17 +333,28 @@ class ABGItem (ABGAttributesHaver):
 		'y': 0,
 		'layer': 0,
 		'locked': False,
-		'id': ""
+		'moving': False,
+		'id': "",
+		'groupId': "",
+		'actions': [],
+		'grid': None
 	}
 
 	SUBCLASSES = dict()
+
 	def createInstanceOf (type_name: str):
-		assert type_name in ABGItem.SUBCLASSES
+		ABGAssert.ensure(
+			(type_name in ABGItem.SUBCLASSES),
+			"Unknown type of Item: " + type_name + "."
+		)
 
 		return ABGItem.SUBCLASSES[type_name]()
 
 	def registerSubclass (type_name: str, c):
-		assert type_name not in ABGItem.SUBCLASSES
+		ABGAssert.ensure(
+			(type_name not in ABGItem.SUBCLASSES),
+			"Duplicate Item subclass for type: " + type_name + "."
+		)
 
 		ABGItem.SUBCLASSES[type_name] = c
 
@@ -243,7 +381,10 @@ class ABGItem (ABGAttributesHaver):
 
 	def validateList (l):
 		for i in l:
-			assert isinstance(i, ABGItem)
+			ABGAssert.ensure(
+				isinstance(i, ABGItem),
+				"This is not an Item: " + str(i) + "."
+			)
 			i.validate()
 
 class ABGZone (ABGItem):
@@ -382,6 +523,7 @@ class ABGMeeple (ABGItem):
 			ABGMeeple.KEY,
 			{
 				'size': 50,
+				'name': "",
 				'color': ABGColor.validate("#b3b3b3"),
 			}
 		)
@@ -399,23 +541,26 @@ class ABGJewel (ABGItem):
 			}
 		)
 
-class ABGPicture (ABGItem):
-	KEY = "picture"
+class ABGImage (ABGItem):
+	KEY = "image"
 
 	def __init__ (this):
 		ABGItem.__init__(
 			this,
-			ABGPicture.KEY,
+			ABGImage.KEY,
 			{
 				'width': 1,
 				'height': 1,
-				'content': "/default.png",
-				'backContent': None,
+				'content': ABGContent(),
+				'backContent': ABGContent(),
 				'flipped': False,
-				'unflippedFor': None,
+				'unflippedFor': [],
 				'text': "",
+				'label': "",
+				'holdItems': False,
 				'backText': "",
 				'overlay': None,
+				'rotation': 0
 				#'setState': None,
 			}
 		)
@@ -551,29 +696,47 @@ class ABGLanguage:
 	COLLECTION = set()
 
 	def define (key):
-		assert isinstance(key, str)
-		assert (key not in ABGLanguage.COLLECTION)
+		ABGAssert.ensure(
+			isinstance(key, str),
+			"Languages must be strings. " + str(key) + " is not."
+		)
+		ABGAssert.ensure(
+			(key not in ABGLanguage.COLLECTION),
+			"Duplicate language definition: " + key + "."
+		)
 
 		ABGLanguage.COLLECTION.add(key)
 
 		return key
 
 	def validate (value):
-		assert value in ABGLanguage.COLLECTION
+		ABGAssert.ensure(
+			value in ABGLanguage.COLLECTION,
+			"Unknown language: " + value + "."
+		)
 
 class ABGMaterialLanguage:
 	COLLECTION = set()
 
 	def define (key):
-		assert isinstance(key, str)
-		assert (key not in ABGMaterialLanguage.COLLECTION)
+		ABGAssert.ensure(
+			isinstance(key, str),
+			"Material languages must be strings. " + str(key) + " is not."
+		)
+		ABGAssert.ensure(
+			(key not in ABGMaterialLanguage.COLLECTION),
+			"Duplicate material language definition: " + key + "."
+		)
 
 		ABGMaterialLanguage.COLLECTION.add(key)
 
 		return key
 
 	def validate (value):
-		assert value in ABGMaterialLanguage.COLLECTION
+		ABGAssert.ensure(
+			value in ABGMaterialLanguage.COLLECTION,
+			"Unknown material language: " + value + "."
+		)
 
 class ABGTranslation (ABGAttributesHaver):
 	def __init__ (this):
@@ -589,7 +752,10 @@ class ABGTranslation (ABGAttributesHaver):
 
 	def validateList (l):
 		for i in l:
-			assert isinstance(i, ABGTranslation)
+			ABGAssert.ensure(
+				isinstance(i, ABGTranslation),
+				"This is not a translation: " + str(i) + "."
+			)
 			i.validate()
 
 class ABGContent (ABGAttributesHaver):
@@ -616,28 +782,50 @@ class ABGAction (ABGAttributesHaver):
 			}
 		)
 
+	def validateList (l):
+		for i in l:
+			ABGAssert.ensure(
+				isinstance(i, ABGAction),
+				"This is not an action: " + str(i) + "."
+			)
+			i.validate()
+
 ################################################################################
 #### ABG GAME CLASSES ##########################################################
 ################################################################################
 class ABGDuration:
 	def validate (value):
-		assert isinstance(value, list)
-	#	assert len(value) == 2
-	#	assert isinstance(value[0], int)
-	#	assert isinstance(value[1], int)
-	#	assert value[0] >= 0
-	#	assert value[1] <= 90
-	#	assert value[0] <= value[1]
+		ABGAssert.ensure(
+			isinstance(value, list),
+			"Duration should be a list. " + str(value) + " is not."
+		)
 
 class ABGPlayerCount:
 	def validate (value):
-		assert isinstance(value, list)
-		assert len(value) == 2
-		assert isinstance(value[0], int)
-		assert isinstance(value[1], int)
-		assert value[0] >= 1
-		assert value[1] <= 9
-		assert value[0] <= value[1]
+		ABGAssert.ensure(
+			isinstance(value, list),
+			"Player count should be a list. " + str(value) + " is not."
+		)
+		ABGAssert.ensure(
+			len(value) == 2,
+			"Player count should have two values. " + str(value) + " does not."
+		)
+		ABGAssert.ensure(
+			(isinstance(value[0], int) and isinstance(value[1], int)),
+			"Player count should be two integers. " + str(value) + " is not."
+		)
+		ABGAssert.ensure(
+			value[0] >= 1,
+			"Minimal player count should be 1 or more. " + str(value) + " is illegal."
+		)
+		ABGAssert.ensure(
+			value[1] <= 9,
+			"Maximal player count should be 9 or less. " + str(value) + " is illegal."
+		)
+		ABGAssert.ensure(
+			value[0] <= value[1],
+			"Maximal player count should be less or equal to minimum player count. " + str(value) + " is illegal."
+		)
 
 class ABGBoardPosition (ABGAttributesHaver):
 	def __init__ (this):
@@ -650,6 +838,31 @@ class ABGBoardPosition (ABGAttributesHaver):
 				'height': 2000,
 			}
 		)
+
+class ABGLocation (ABGAttributesHaver):
+	def __init__ (this):
+		ABGAttributesHaver.__init__(
+			this,
+			{
+				'x': 0,
+				'y': 0,
+			}
+		)
+
+class ABGGrid (ABGAttributesHaver):
+	def __init__ (this):
+		ABGAttributesHaver.__init__(
+			this,
+			{
+				'type': "grid",
+				'size': 0,
+				'offset': ABGLocation()
+			}
+		)
+
+	def validate (this):
+		if this is not None:
+			ABGAttributesHaver.validate(this)
 
 class ABGBoard (ABGAttributesHaver):
 	def __init__ (this):
@@ -665,6 +878,7 @@ class ABGBoard (ABGAttributesHaver):
 				'gridSize': 1,
 				'imageUrl': "/game_assets/default.png",
 				'keepTitle': True,
+				'neverSaved': True,
 				'initialBoardPosition': ABGBoardPosition(),
 				'defaultLanguage': "en",
 				'materialLanguage': "Multi-lang",
@@ -702,9 +916,7 @@ class ABGGame (ABGAttributesHaver):
 		asDict = dict()
 		this.pushAttributesToJson(asDict)
 
-		output = json.dump(asDict, ident=4);
-
-		print(output)
+		json.dump(asDict, open(filename, 'w'), indent=4);
 
 		return this
 
@@ -712,63 +924,69 @@ class ABGGame (ABGAttributesHaver):
 #### ENUM CREATION #############################################################
 ################################################################################
 
-ABGItem.registerSubclass(ABGZone.KEY, ABGZone)
-ABGItem.registerSubclass(ABGToken.KEY, ABGToken)
-ABGItem.registerSubclass(ABGScreen.KEY, ABGScreen)
-ABGItem.registerSubclass(ABGRound.KEY, ABGRound)
-ABGItem.registerSubclass(ABGRect.KEY, ABGRect)
-ABGItem.registerSubclass(ABGPawn.KEY, ABGPawn)
-ABGItem.registerSubclass(ABGNote.KEY, ABGNote)
-ABGItem.registerSubclass(ABGMeeple.KEY, ABGMeeple)
-ABGItem.registerSubclass(ABGJewel.KEY, ABGJewel)
-ABGItem.registerSubclass(ABGPicture.KEY, ABGPicture)
-ABGItem.registerSubclass(ABGHexagon.KEY, ABGHexagon)
-ABGItem.registerSubclass(ABGGenerator.KEY, ABGGenerator)
-ABGItem.registerSubclass(ABGDiceImage.KEY, ABGDiceImage)
-ABGItem.registerSubclass(ABGDice.KEY, ABGDice)
-ABGItem.registerSubclass(ABGCylinder.KEY, ABGCylinder)
-ABGItem.registerSubclass(ABGCube.KEY, ABGCube)
-ABGItem.registerSubclass(ABGCounter.KEY, ABGCounter)
 ABGItem.registerSubclass(ABGCheckerBoard.KEY, ABGCheckerBoard)
+ABGItem.registerSubclass(ABGCounter.KEY, ABGCounter)
+ABGItem.registerSubclass(ABGCube.KEY, ABGCube)
+ABGItem.registerSubclass(ABGCylinder.KEY, ABGCylinder)
+ABGItem.registerSubclass(ABGDice.KEY, ABGDice)
+ABGItem.registerSubclass(ABGDiceImage.KEY, ABGDiceImage)
+ABGItem.registerSubclass(ABGGenerator.KEY, ABGGenerator)
+ABGItem.registerSubclass(ABGHexagon.KEY, ABGHexagon)
+ABGItem.registerSubclass(ABGImage.KEY, ABGImage)
+ABGItem.registerSubclass(ABGJewel.KEY, ABGJewel)
+ABGItem.registerSubclass(ABGMeeple.KEY, ABGMeeple)
+ABGItem.registerSubclass(ABGNote.KEY, ABGNote)
+ABGItem.registerSubclass(ABGPawn.KEY, ABGPawn)
+ABGItem.registerSubclass(ABGRect.KEY, ABGRect)
+ABGItem.registerSubclass(ABGRound.KEY, ABGRound)
+ABGItem.registerSubclass(ABGScreen.KEY, ABGScreen)
+ABGItem.registerSubclass(ABGToken.KEY, ABGToken)
+ABGItem.registerSubclass(ABGZone.KEY, ABGZone)
 
-ABGLabelPosition.LEFT = ABGLabelPosition.define("LEFT")
+ABGLabelPosition.LEFT = ABGLabelPosition.define("left")
+ABGLabelPosition.TOP = ABGLabelPosition.define("top")
 
 ABGBorderStyle.DOTTED = ABGBorderStyle.define("DOTTED")
+ABGBorderStyle.SOLID = ABGBorderStyle.define("SOLID")
+ABGBorderStyle.DASHED = ABGBorderStyle.define("DASHED")
 
 ABGLanguage.EN = ABGLanguage.define("en")
 ABGLanguage.FR = ABGLanguage.define("fr")
 
 ABGMaterialLanguage.MULTI_LANG = ABGMaterialLanguage.define("Multi-lang")
+ABGMaterialLanguage.EN = ABGMaterialLanguage.define("en")
+ABGMaterialLanguage.FR = ABGMaterialLanguage.define("fr")
 
-ABGAttribute.ACTIONS = ABGAttribute.define("actions", list, ABGAction.validate, fromJson = ABGAction)
+ABGAttribute.ACTIONS = ABGAttribute.define("actions", list, ABGAction.validateList, fromJson = ABGAction)
 ABGAttribute.ALTERNATE_COLOR = ABGAttribute.define("alternateColor", str, ABGColor.validate)
 ABGAttribute.AVAILABLE_ITEMS = ABGAttribute.define("availableItems", list, None, fromJson = ABGItem)
 ABGAttribute.BACKGROUND_COLOR = ABGAttribute.define("backgroundColor", str, ABGColor.validate)
 ABGAttribute.BACK_CONTENT = ABGAttribute.define("backContent", ABGContent, ABGContent.validate, fromJson = ABGContent)
 ABGAttribute.BACK_TEXT = ABGAttribute.define("backText", str, None)
+ABGAttribute.BASELINE = ABGAttribute.define("baseline", str, None)
 ABGAttribute.BG_TYPE = ABGAttribute.define("bgType", str, None)
-ABGAttribute.BOARD = ABGAttribute.define("board", ABGBoard, None)
+ABGAttribute.BOARD = ABGAttribute.define("board", ABGBoard, None, fromJson = ABGBoard)
 ABGAttribute.BORDER_COLOR = ABGAttribute.define("borderColor", str, ABGColor.validate)
 ABGAttribute.BORDER_STYLE = ABGAttribute.define("borderStyle", str, ABGBorderStyle.validate)
 ABGAttribute.COLOR = ABGAttribute.define("color", str, ABGColor.validate)
-ABGAttribute.COL_COUNT = ABGAttribute.define("colCount", int, lambda x : (x > 0))
+ABGAttribute.COL_COUNT = ABGAttribute.define("colCount", int, lambda x : (x > 0), fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.CONTENT = ABGAttribute.define("content", ABGContent, ABGContent.validate, fromJson = ABGContent)
 ABGAttribute.DEFAULT_BASELINE = ABGAttribute.define("defaultBaseline", str, None)
 ABGAttribute.DEFAULT_DESCRIPTION = ABGAttribute.define("defaultDescription", str, None)
 ABGAttribute.DEFAULT_LANGUAGE = ABGAttribute.define("defaultLanguage", str, ABGLanguage.validate)
 ABGAttribute.DEFAULT_NAME = ABGAttribute.define("defaultName", str, None)
-ABGAttribute.BASELINE = ABGAttribute.define("baseline", str, None)
 ABGAttribute.DESCRIPTION = ABGAttribute.define("description", str, None)
-ABGAttribute.LANGUAGE = ABGAttribute.define("language", str, ABGLanguage.validate)
-ABGAttribute.NAME = ABGAttribute.define("name", str, None)
 ABGAttribute.DURATION = ABGAttribute.define("duration", list, ABGDuration.validate)
+ABGAttribute.FILE = ABGAttribute.define("file", str, None)
 ABGAttribute.FLIPPED = ABGAttribute.define("flipped", bool, None)
 ABGAttribute.FLIPPED_COLOR = ABGAttribute.define("flippedColor", str, ABGColor.validate)
-ABGAttribute.FONT_SIZE = ABGAttribute.define("fontSize", int, lambda x : (x >= 0))
 ABGAttribute.FONT_FAMILY = ABGAttribute.define("fontFamily", str, None)
+ABGAttribute.FONT_SIZE = ABGAttribute.define("fontSize", [int, float], lambda x : (x >= 0), fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.GAME_ID = ABGAttribute.define("gameId", str, None)
-ABGAttribute.GRID_SIZE = ABGAttribute.define("gridSize", int, lambda x : (x > 0))
-ABGAttribute.HEIGHT = ABGAttribute.define("height", int, lambda x : (x > 0))
+ABGAttribute.GRID = ABGAttribute.define("grid", [ABGGrid, None], ABGGrid.validate, fromJson = ABGGrid)
+ABGAttribute.GRID_SIZE = ABGAttribute.define("gridSize", int, lambda x : (x > 0), fromJson = ABGAttribute.ensureNumeral)
+ABGAttribute.GROUP_ID = ABGAttribute.define("groupId", str, None)
+ABGAttribute.HEIGHT = ABGAttribute.define("height", [int, float], lambda x : (x > 0), fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.HOLD_ITEMS = ABGAttribute.define("holdItems", bool, None)
 ABGAttribute.ID = ABGAttribute.define("id", str, None) # Don't know yet.
 ABGAttribute.IMAGE_URL = ABGAttribute.define("imageUrl", str, None)
@@ -777,33 +995,43 @@ ABGAttribute.ITEMS = ABGAttribute.define("items", list, ABGItem.validateList, fr
 ABGAttribute.KEEP_TITLE = ABGAttribute.define("keepTitle", bool, None)
 ABGAttribute.LABEL = ABGAttribute.define("label", str, None)
 ABGAttribute.LABEL_POSITION = ABGAttribute.define("labelPosition", str, ABGLabelPosition.validate)
-ABGAttribute.LAYER = ABGAttribute.define("layer", int, None)
-ABGAttribute.LEFT = ABGAttribute.define("left", int, None)
+ABGAttribute.LANGUAGE = ABGAttribute.define("language", str, ABGLanguage.validate)
+ABGAttribute.LAYER = ABGAttribute.define("layer", int, None, fromJson = ABGAttribute.ensureNumeral)
+ABGAttribute.LEFT = ABGAttribute.define("left", [int, float], None, fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.LOCKED = ABGAttribute.define("locked", bool, None)
 ABGAttribute.MATERIAL_LANGUAGE = ABGAttribute.define("materialLanguage", str, ABGMaterialLanguage.validate)
 ABGAttribute.MESSAGES = ABGAttribute.define("messages", list, None)
-ABGAttribute.ON_ITEM = ABGAttribute.define("onItem", int, None) # Don't know yet.
-ABGAttribute.OVERLAY = ABGAttribute.define("overlay", str, None) # Don't know yet
-ABGAttribute.OWNED_BY = ABGAttribute.define("ownedBy", int, None) # Don't know yet.
+ABGAttribute.MOVING = ABGAttribute.define("moving", bool, None)
+ABGAttribute.NAME = ABGAttribute.define("name", str, None)
+ABGAttribute.NEVER_SAVED = ABGAttribute.define("neverSaved", bool, None)
+ABGAttribute.OFFSET = ABGAttribute.define("offset", ABGLocation, ABGLocation.validate, fromJson = ABGLocation)
+ABGAttribute.ON_ITEM = ABGAttribute.define("onItem", None, None) # Don't know yet.
+ABGAttribute.OVERLAY = ABGAttribute.define("overlay", None, None) # Don't know yet
+ABGAttribute.OWNED_BY = ABGAttribute.define("ownedBy", None, None) # Don't know yet.
 ABGAttribute.PLAYER_COUNT = ABGAttribute.define("playerCount", list, ABGPlayerCount.validate, fromJson = ABGPlayerCount)
 ABGAttribute.PUBLISHED = ABGAttribute.define("published", bool, None)
 ABGAttribute.ROLL_ON_DBL_CLICK = ABGAttribute.define("rollOnDblClick", bool, None)
-ABGAttribute.ROW_COUNT = ABGAttribute.define("rowCount", int, lambda x : (x > 0))
-ABGAttribute.SCALE = ABGAttribute.define("scale", int, lambda x : (x > 0))
-ABGAttribute.SET_STATE = ABGAttribute.define("setState", int, None) # Don't know yet.
-ABGAttribute.SIZE = ABGAttribute.define("size", int, lambda x : (x > 0))
+ABGAttribute.ROW_COUNT = ABGAttribute.define("rowCount", int, lambda x : (x > 0), fromJson = ABGAttribute.ensureNumeral)
+ABGAttribute.SCALE = ABGAttribute.define("scale", [int, float], lambda x : (x > 0), fromJson = ABGAttribute.ensureNumeral)
+ABGAttribute.SET_STATE = ABGAttribute.define("setState", None, None) # Don't know yet.
+ABGAttribute.SIZE = ABGAttribute.define("size", [int, float], lambda x : (x > 0), fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.TEXT = ABGAttribute.define("text", str, None)
 ABGAttribute.TEXT_COLOR = ABGAttribute.define("textColor", str, ABGColor.validate)
-ABGAttribute.TIMESTAMP = ABGAttribute.define("timestamp", int, lambda x : (x >= 0))
-ABGAttribute.TOP = ABGAttribute.define("top", int, None)
+ABGAttribute.TIMESTAMP = ABGAttribute.define("timestamp", int, lambda x : (x >= 0), fromJson = ABGAttribute.ensureNumeral)
+ABGAttribute.TOP = ABGAttribute.define("top", [int, float], None, fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.TRANSLATIONS = ABGAttribute.define("translations", list, ABGTranslation.validateList, fromJson = ABGTranslation)
 ABGAttribute.TYPE = ABGAttribute.define("type", str, None)
-ABGAttribute.UNFLIPPED_FOR = ABGAttribute.define("unflippedFor", str, None) # Don't know yet
-ABGAttribute.VERTICAL = ABGAttribute.define("vertical", bool, None)
+ABGAttribute.UNFLIPPED_FOR = ABGAttribute.define("unflippedFor", [list, None], None) # Don't know yet
 ABGAttribute.VALUE = ABGAttribute.define("value", str, None)
-ABGAttribute.WIDTH = ABGAttribute.define("width", int, lambda x : (x > 0))
-ABGAttribute.X = ABGAttribute.define("x", int, None)
-ABGAttribute.Y = ABGAttribute.define("y", int, None)
+ABGAttribute.VERTICAL = ABGAttribute.define("vertical", bool, None)
+ABGAttribute.WIDTH = ABGAttribute.define("width", [int, float], lambda x : (x > 0), fromJson = ABGAttribute.ensureNumeral)
+ABGAttribute.X = ABGAttribute.define("x", [int, float], None, fromJson = ABGAttribute.ensureNumeral)
+ABGAttribute.Y = ABGAttribute.define("y", [int, float], None, fromJson = ABGAttribute.ensureNumeral)
+ABGAttribute.ROTATION = ABGAttribute.define("rotation", [int, float], None, fromJson = ABGAttribute.ensureNumeral)
 
+if __name__ == '__main__':
+	import sys
 
-test = ABGHexagon()
+	testGame = ABGGame()
+	testGame.fromFile(sys.argv[1])
+	testGame.toFile(sys.argv[1] + ".out")
