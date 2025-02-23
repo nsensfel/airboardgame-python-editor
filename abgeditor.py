@@ -360,6 +360,10 @@ class ABGAttributesHaver:
 		return this.attributes[key]
 
 	def pullAttributesFromJson (this, attributes: dict):
+		if attributes is None:
+			print(this.name + " would like attributes from None.")
+			return
+
 		for (key, value) in attributes.items():
 			attribute = this.getAttribute(key)
 
@@ -469,8 +473,22 @@ class ABGAttributesHaver:
 		return copy.deepcopy(this)
 
 ################################################################################
+#### SHARED ATTRIBUTES ACCESSORS ###############################################
+################################################################################
+class ABGWidthAndHeightHaver:
+
+	def setWidthAndHeight (this, width, height):
+		this.setAttributeValue("width", width).setAttributeValue("height", height)
+
+		return this
+
+	def getWidthAndHeight (this):
+		return (this.getAttributeValue("width"), this.getAttributeValue("height"))
+
+################################################################################
 #### ADVANCED VALUES FOR ATTRIBUTES ############################################
 ################################################################################
+
 class ABGContent (ABGAttributesHaver):
 	# Content objects have "content" that are strings...
 	CONTENT_ATTRIBUTE = ABGAttribute("content", str, None, None, None)
@@ -1303,6 +1321,15 @@ class ABGLocation (ABGAttributesHaver):
 			}
 		)
 
+	def asTuple (this):
+		return (this.getAttributeValue("x"), this.getAttributeValue("y"))
+
+	def setTo (this, x, y):
+		this.setAttributeValue("x", x).setAttributeValue("y", y)
+
+		return this
+
+
 class ABGGrid (ABGAttributesHaver):
 	def __init__ (this):
 		ABGAttributesHaver.__init__(
@@ -1399,9 +1426,39 @@ class ABGGame (ABGAttributesHaver):
 
 		return result
 
+	def removeItemsMatching (this, criteria):
+		result = list()
+
+		for e in this.getAttributeValue('items'):
+			matched = True
+
+			for (key, value) in criteria.items():
+				if not e.hasAttribute(key):
+					matched = False
+					break
+
+				if not e.getAttributeValue(key) == value:
+					matched = False
+					break
+
+			if not matched:
+				result.append(e)
+
+		this.setAttributeValue('items', result)
+
+		return this
+
 	def addItem (this, item):
 		ABGAssert.ensure(isinstance(item, ABGItem), "This is not an item.")
 		this.getAttributeValue('items').append(item)
+
+		return this
+
+	def removeItem (this, item):
+		ABGAssert.ensure(isinstance(item, ABGItem), "This is not an item.")
+		this.getAttributeValue('items').remove(item)
+
+		return this
 
 ################################################################################
 #### ENUM CREATION #############################################################
@@ -1447,9 +1504,9 @@ ABGMaterialLanguage.EN = ABGMaterialLanguage.define("en")
 ABGMaterialLanguage.FR = ABGMaterialLanguage.define("fr")
 
 ABGAttribute.ACTIONS = ABGAttribute.define("actions", list, ABGAction.validateList, fromJson = ABGAction)
-ABGAttribute.ON_ITEM = ABGAttribute.define("onItem", list, ABGAction.validateList, fromJson = ABGAction)
-ABGAttribute.ARGS = ABGAttribute.define("args", [None, ABGActionArgs], ABGActionArgs.validate, fromJson = ABGActionArgs)
 ABGAttribute.ALTERNATE_COLOR = ABGAttribute.define("alternateColor", str, ABGColor.validate)
+ABGAttribute.ANGLE = ABGAttribute.define("angle", [int, None], None)
+ABGAttribute.ARGS = ABGAttribute.define("args", [None, ABGActionArgs], ABGActionArgs.validate, fromJson = ABGActionArgs)
 ABGAttribute.AVAILABLE_ITEMS = ABGAttribute.define("availableItems", list, None, fromJson = ABGItem.fromJson)
 ABGAttribute.BACK = ABGAttribute.define("back", [ABGContent, str], ABGContent.validate, fromJson = ABGContent.fromJson)
 ABGAttribute.BACKGROUND_COLOR = ABGAttribute.define("backgroundColor", str, ABGColor.validate)
@@ -1464,6 +1521,8 @@ ABGAttribute.COLOR = ABGAttribute.define("color", str, ABGColor.validate)
 ABGAttribute.COL_COUNT = ABGAttribute.define("colCount", int, lambda x, y : (x > 0), fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.CONTENT = ABGAttribute.define("content", [ABGContent, str], ABGContent.validate, fromJson = ABGContent.fromJson)
 ABGAttribute.CURRENT_ITEM_ID = ABGAttribute.define("currentItemId", str, None) # Don't know yet.
+ABGAttribute.CUSTOM_LABEL = ABGAttribute.define("customLabel", [str, None], None)
+ABGAttribute.CUSTOM_SHORTCUT = ABGAttribute.define("customShortcut", [str, None], None)
 ABGAttribute.DEFAULT_BASELINE = ABGAttribute.define("defaultBaseline", str, None)
 ABGAttribute.DEFAULT_DESCRIPTION = ABGAttribute.define("defaultDescription", str, None)
 ABGAttribute.DEFAULT_LANGUAGE = ABGAttribute.define("defaultLanguage", str, ABGLanguage.validate)
@@ -1492,9 +1551,6 @@ ABGAttribute.ITEM = ABGAttribute.define("item", [None, ABGItem], ABGItem.validat
 ABGAttribute.ITEMS = ABGAttribute.define("items", list, ABGItem.validateList, fromJson = ABGItem.fromJson)
 ABGAttribute.KEEP_TITLE = ABGAttribute.define("keepTitle", bool, None)
 ABGAttribute.LABEL = ABGAttribute.define("label", [str, None], None)
-ABGAttribute.CUSTOM_SHORTCUT = ABGAttribute.define("customShortcut", [str, None], None)
-ABGAttribute.CUSTOM_LABEL = ABGAttribute.define("customLabel", [str, None], None)
-ABGAttribute.ANGLE = ABGAttribute.define("angle", [int, None], None)
 ABGAttribute.LABEL_POSITION = ABGAttribute.define("labelPosition", str, ABGLabelPosition.validate)
 ABGAttribute.LANGUAGE = ABGAttribute.define("language", str, ABGLanguage.validate)
 ABGAttribute.LAYER = ABGAttribute.define("layer", int, None, fromJson = ABGAttribute.ensureNumeral)
@@ -1510,6 +1566,7 @@ ABGAttribute.NEVER_SAVED = ABGAttribute.define("neverSaved", bool, None)
 ABGAttribute.OFFSET = ABGAttribute.define("offset", ABGLocation, ABGLocation.validate, fromJson = ABGLocation)
 ABGAttribute.OFFSET_X = ABGAttribute.define("offsetX", [int, float], None, fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.OFFSET_Y = ABGAttribute.define("offsetY", [int, float], None, fromJson = ABGAttribute.ensureNumeral)
+ABGAttribute.ON_ITEM = ABGAttribute.define("onItem", list, ABGAction.validateList, fromJson = ABGAction)
 ABGAttribute.OVERLAY = ABGAttribute.define("overlay", [ABGContent, str, None], ABGContent.validate, fromJson = ABGContent.fromJson)
 ABGAttribute.OWNED_BY = ABGAttribute.define("ownedBy", None, None) # Don't know yet.
 ABGAttribute.PLAYER_COUNT = ABGAttribute.define("playerCount", list, ABGPlayerCount.validate, fromJson = ABGPlayerCount)
