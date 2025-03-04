@@ -743,6 +743,7 @@ class ABGScreen (ABGItem):
 				'borderColor': ABGColor.TRANSPARENT,
 				'borderStyle': ABGBorderStyle.DOTTED,
 				'backgroundColor': ABGColor.TRANSPARENT,
+				'rotation': 0,
 				#'ownedBy': None,
 				#'setState': None,
 			}
@@ -876,7 +877,8 @@ class ABGImage (ABGItem):
 				'holdItems': False,
 				'backText': "",
 				'overlay': ABGContent(),
-				'rotation': 0
+				'rotation': 0,
+				'linkedItems': []
 				#'setState': None,
 			}
 		)
@@ -953,7 +955,7 @@ class ABGDiceImage (ABGItem):
 				'width': 50,
 				'height': 50,
 				'rollOnDblClick': False,
-		#		'rollOnMove': !rollOnDblClick,
+				'rollOnMove': True
 			},
 			hijackedAttributes = {
 				'value': ABGDice.VALUE_ATTRIBUTE,
@@ -1573,6 +1575,7 @@ ABGAttribute.PLAYER_COUNT = ABGAttribute.define("playerCount", list, ABGPlayerCo
 ABGAttribute.PUBLISHED = ABGAttribute.define("published", bool, None)
 ABGAttribute.RADIUS = ABGAttribute.define("radius", [int, float], lambda x, y : (x > 0), fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.ROLL_ON_DBL_CLICK = ABGAttribute.define("rollOnDblClick", bool, None)
+ABGAttribute.ROLL_ON_MOVE = ABGAttribute.define("rollOnMove", bool, None)
 ABGAttribute.ROTATION = ABGAttribute.define("rotation", [int, float], None, fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.ROW_COUNT = ABGAttribute.define("rowCount", int, lambda x, y : (x > 0), fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.SCALE = ABGAttribute.define("scale", [int, float], lambda x, y : (x > 0), fromJson = ABGAttribute.ensureNumeral)
