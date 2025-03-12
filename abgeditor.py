@@ -808,6 +808,7 @@ class ABGAnchor (ABGItem):
 			ABGAnchor.KEY,
 			{
 				'families': [],
+				'text': "",
 				'color': ABGColor.define("#b3b3b3"),
 			}
 		)
