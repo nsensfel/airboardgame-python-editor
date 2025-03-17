@@ -5,175 +5,10 @@ import inspect
 import copy
 import math
 
-################################################################################
-#### ABG ATTRIBUTE VALUE CLASSES ###############################################
-################################################################################
 class ABGAssert:
 	def ensure (cond: bool, message: str):
 		if not cond:
 			raise Exception(message)
-
-class ABGBorderStyle:
-	COLLECTION = set()
-
-	def define (key):
-		ABGAssert.ensure(
-			isinstance(key, str),
-			"ABGBorderStyle keys must be strings. " + str(key) + " is not."
-		)
-
-		key = key.lower()
-
-		ABGAssert.ensure(
-			(key not in ABGBorderStyle.COLLECTION),
-			"Duplicate definition of Border Style " + key + "."
-		)
-
-		ABGBorderStyle.COLLECTION.add(key)
-
-		return key
-
-	def validate (value, parent = ""):
-		if len(parent) > 0:
-			parent = " from " + parent
-
-		ABGAssert.ensure(
-			isinstance(value, str),
-			"Border Style must be strings. " + str(value) + parent +" is not."
-		)
-		ABGAssert.ensure(
-			value in ABGBorderStyle.COLLECTION,
-			"Unknown Border Style: " + value + parent + "."
-		)
-
-		return True
-
-class ABGLabelPosition:
-	COLLECTION = set()
-
-	def define (key):
-		ABGAssert.ensure(
-			isinstance(key, str),
-			"ABGLabelPosition keys must be strings. " + str(key) + " is not."
-		)
-
-		key = key.lower()
-
-		ABGAssert.ensure(
-			(key not in ABGLabelPosition.COLLECTION),
-			"Duplicate definition of Label Position " + key + "."
-		)
-
-		ABGLabelPosition.COLLECTION.add(key)
-
-		return key
-
-	def validate (value, parent = ""):
-		if len(parent) > 0:
-			parent = " from " + parent
-
-		ABGAssert.ensure(
-			isinstance(value, str),
-			"Label Position must be strings. " + str(value) + parent + " is not."
-		)
-		ABGAssert.ensure(
-			value in ABGLabelPosition.COLLECTION,
-			"Unknown Label Position: " + value + parent + "."
-		)
-
-		return True
-
-class ABGSide:
-	COLLECTION = set()
-
-	def define (key):
-		ABGAssert.ensure(
-			isinstance(key, str),
-			"ABGSide keys must be strings. " + str(key) + " is not."
-		)
-
-		key = key.lower()
-
-		ABGAssert.ensure(
-			(key not in ABGSide.COLLECTION),
-			"Duplicate definition of Side " + key + "."
-		)
-
-		ABGSide.COLLECTION.add(key)
-
-		return key
-
-	def validate (value, parent = ""):
-		if len(parent) > 0:
-			parent = " from " + parent
-
-		ABGAssert.ensure(
-			isinstance(value, str),
-			"Sides must be strings. " + str(value) + parent + " is not."
-		)
-		ABGAssert.ensure(
-			value in ABGSide.COLLECTION,
-			"Unknown Side: " + value + parent + "."
-		)
-
-		return True
-
-class ABGColor:
-
-	def define (value):
-		ABGColor.validate(value)
-
-		return value
-
-	def validate (value, parent = ""):
-		if len(parent) > 0:
-			parent = " from " + parent
-
-		ABGAssert.ensure(
-			isinstance(value, str),
-			"Colors must be strings. " + str(value) + parent + " is not."
-		)
-
-		# TODO
-
-		return True
-
-class ABGFamilies:
-	def validate (value, parent = ""):
-		if len(parent) > 0:
-			parent = " from " + parent
-
-		ABGAssert.ensure(
-			isinstance(value, list),
-			"Families must be lists. " + str(value) + parent + " is not."
-		)
-
-		for e in value:
-			ABGAssert.ensure(
-				isinstance(e, str),
-				"Families must be lists of strings. " + str(value) + parent + " is not."
-			)
-
-		return True
-
-class ABGId:
-	def validate (value, parent = ""):
-		if len(parent) > 0:
-			parent = " from " + parent
-
-		ABGAssert.ensure(
-			isinstance(value, str),
-			"IDs must be strings. " + str(value) + parent + " is not."
-		)
-
-		return True
-
-	def validateList (l, parent = ""):
-		for i in l:
-			if not ABGId.validate(i, parent):
-				return False
-
-		return True
 
 ################################################################################
 #### ABG ATTRIBUTE CLASSES #####################################################
@@ -473,6 +308,174 @@ class ABGAttributesHaver:
 		return copy.deepcopy(this)
 
 ################################################################################
+#### ABG ATTRIBUTE VALUE CLASSES ###############################################
+################################################################################
+class ABGBorderStyle:
+	COLLECTION = set()
+
+	def define (key):
+		ABGAssert.ensure(
+			isinstance(key, str),
+			"ABGBorderStyle keys must be strings. " + str(key) + " is not."
+		)
+
+		key = key.lower()
+
+		ABGAssert.ensure(
+			(key not in ABGBorderStyle.COLLECTION),
+			"Duplicate definition of Border Style " + key + "."
+		)
+
+		ABGBorderStyle.COLLECTION.add(key)
+
+		return key
+
+	def validate (value, parent = ""):
+		if len(parent) > 0:
+			parent = " from " + parent
+
+		ABGAssert.ensure(
+			isinstance(value, str),
+			"Border Style must be strings. " + str(value) + parent +" is not."
+		)
+		ABGAssert.ensure(
+			value in ABGBorderStyle.COLLECTION,
+			"Unknown Border Style: " + value + parent + "."
+		)
+
+		return True
+
+class ABGLabelPosition:
+	COLLECTION = set()
+
+	def define (key):
+		ABGAssert.ensure(
+			isinstance(key, str),
+			"ABGLabelPosition keys must be strings. " + str(key) + " is not."
+		)
+
+		key = key.lower()
+
+		ABGAssert.ensure(
+			(key not in ABGLabelPosition.COLLECTION),
+			"Duplicate definition of Label Position " + key + "."
+		)
+
+		ABGLabelPosition.COLLECTION.add(key)
+
+		return key
+
+	def validate (value, parent = ""):
+		if len(parent) > 0:
+			parent = " from " + parent
+
+		ABGAssert.ensure(
+			isinstance(value, str),
+			"Label Position must be strings. " + str(value) + parent + " is not."
+		)
+		ABGAssert.ensure(
+			value in ABGLabelPosition.COLLECTION,
+			"Unknown Label Position: " + value + parent + "."
+		)
+
+		return True
+
+class ABGSide:
+	COLLECTION = set()
+
+	def define (key):
+		ABGAssert.ensure(
+			isinstance(key, str),
+			"ABGSide keys must be strings. " + str(key) + " is not."
+		)
+
+		key = key.lower()
+
+		ABGAssert.ensure(
+			(key not in ABGSide.COLLECTION),
+			"Duplicate definition of Side " + key + "."
+		)
+
+		ABGSide.COLLECTION.add(key)
+
+		return key
+
+	def validate (value, parent = ""):
+		if len(parent) > 0:
+			parent = " from " + parent
+
+		ABGAssert.ensure(
+			isinstance(value, str),
+			"Sides must be strings. " + str(value) + parent + " is not."
+		)
+		ABGAssert.ensure(
+			value in ABGSide.COLLECTION,
+			"Unknown Side: " + value + parent + "."
+		)
+
+		return True
+
+class ABGColor:
+	OPTIONAL_COLOR_ATTRIBUTE = ABGAttribute("color", [str, None], None, None, None)
+	OPTIONAL_SECONDARY_COLOR_ATTRIBUTE = ABGAttribute("secondaryColor", [str, None], None, None, None)
+
+	def define (value):
+		ABGColor.validate(value)
+
+		return value
+
+	def validate (value, parent = ""):
+		if len(parent) > 0:
+			parent = " from " + parent
+
+		ABGAssert.ensure(
+			isinstance(value, str),
+			"Colors must be strings. " + str(value) + parent + " is not."
+		)
+
+		# TODO
+
+		return True
+
+class ABGFamilies:
+	def validate (value, parent = ""):
+		if len(parent) > 0:
+			parent = " from " + parent
+
+		ABGAssert.ensure(
+			isinstance(value, list),
+			"Families must be lists. " + str(value) + parent + " is not."
+		)
+
+		for e in value:
+			ABGAssert.ensure(
+				isinstance(e, str),
+				"Families must be lists of strings. " + str(value) + parent + " is not."
+			)
+
+		return True
+
+class ABGId:
+	def validate (value, parent = ""):
+		if len(parent) > 0:
+			parent = " from " + parent
+
+		ABGAssert.ensure(
+			isinstance(value, str),
+			"IDs must be strings. " + str(value) + parent + " is not."
+		)
+
+		return True
+
+	def validateList (l, parent = ""):
+		for i in l:
+			if not ABGId.validate(i, parent):
+				return False
+
+		return True
+
+
+################################################################################
 #### SHARED ATTRIBUTES ACCESSORS ###############################################
 ################################################################################
 class ABGWidthAndHeightHaver:
@@ -522,6 +525,14 @@ class ABGContent (ABGAttributesHaver):
 
 		if this is not None:
 			return ABGAttributesHaver.validate(this, parent)
+
+		return False
+
+	def validateOptional (this, parent = ""):
+		if this is None:
+			return True
+
+		return ABGContent.validate(this, parent)
 
 	def validateList (l, parent = ""):
 		source = "" if len(parent) == 0 else ("Found in " + parent + "'s attributes: ")
@@ -808,7 +819,7 @@ class ABGAnchor (ABGItem):
 			ABGAnchor.KEY,
 			{
 				'families': [],
-				'text': "",
+				'label': "",
 				'color': ABGColor.define("#b3b3b3"),
 			}
 		)
@@ -1186,13 +1197,54 @@ class ABGAction (ABGAttributesHaver):
 
 		return True
 
+class ABGBackgroundConfig (ABGAttributesHaver):
+	OPTIONAL_SIZE = ABGAttribute("size", [int, None], lambda x, y : x is None or (x > 0), fromJson = ABGAttribute.ensureNumeral, toJson = None)
+
+	def __init__ (this):
+		ABGAttributesHaver.__init__(
+			this,
+			"BackgroundConfig",
+			{
+				'img': None,
+				'color': None,
+				'secondaryColor': None,
+				'thickness': None,
+				'size': None,
+				'secondarySize': None,
+			},
+			hijackedAttributes = {
+				'color': ABGColor.OPTIONAL_COLOR_ATTRIBUTE,
+				'secondaryColor': ABGColor.OPTIONAL_SECONDARY_COLOR_ATTRIBUTE,
+				'size': ABGBackgroundConfig.OPTIONAL_SIZE
+			}
+		)
+
+	def validate (this, parent = ""):
+		if this is not None:
+			return ABGAttributesHaver.validate(this, parent)
+		else:
+			return True
+
+	def validateList (l, parent = ""):
+		source = "" if len(parent) == 0 else ("Found in " + parent + "'s attributes: ")
+
+		for i in l:
+			ABGAssert.ensure(
+				isinstance(i, ABGBackgroundConfig),
+				source + "This is not an BackgroundConfig: " + str(i) + "."
+			)
+
+			if not i.validate(parent):
+				return False
+
+		return True
+
 class ABGLayerImage (ABGAttributesHaver):
 	def __init__ (this):
 		ABGAttributesHaver.__init__(
 			this,
 			"LayerImage",
 			{
-				'uid': "",
 				'type': "external",
 				'content': ""
 			},
@@ -1226,8 +1278,6 @@ class ABGImageLayer (ABGAttributesHaver):
 			this,
 			"ImageLayer",
 			{
-				'uid': "",
-				'offset': ABGLocation(),
 				'images': [],
 				'side': "front",
 				'offsetX': 0,
@@ -1364,6 +1414,7 @@ class ABGBoard (ABGAttributesHaver):
 				'playerCount': [1, 9],
 				'duration': [],
 				'gridSize': 1,
+				'bgConf': None,
 				'imageUrl': "/game_assets/default.png",
 				'keepTitle': True,
 				'neverSaved': True,
@@ -1521,8 +1572,11 @@ ABGAttribute.BOARD = ABGAttribute.define("board", ABGBoard, None, fromJson = ABG
 ABGAttribute.BORDER_COLOR = ABGAttribute.define("borderColor", str, ABGColor.validate)
 ABGAttribute.BORDER_STYLE = ABGAttribute.define("borderStyle", str, ABGBorderStyle.validate)
 ABGAttribute.COLOR = ABGAttribute.define("color", str, ABGColor.validate)
+ABGAttribute.SECONDARY_COLOR = ABGAttribute.define("secondaryColor", str, ABGColor.validate)
 ABGAttribute.COL_COUNT = ABGAttribute.define("colCount", int, lambda x, y : (x > 0), fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.CONTENT = ABGAttribute.define("content", [ABGContent, str], ABGContent.validate, fromJson = ABGContent.fromJson)
+ABGAttribute.IMG = ABGAttribute.define("img", [ABGContent, None], ABGContent.validateOptional, fromJson = ABGContent.fromJson)
+ABGAttribute.BG_CONF = ABGAttribute.define("bgConf", [ABGBackgroundConfig, None], ABGBackgroundConfig.validate, fromJson = ABGBackgroundConfig)
 ABGAttribute.CURRENT_ITEM_ID = ABGAttribute.define("currentItemId", str, None) # Don't know yet.
 ABGAttribute.CUSTOM_LABEL = ABGAttribute.define("customLabel", [str, None], None)
 ABGAttribute.CUSTOM_SHORTCUT = ABGAttribute.define("customShortcut", [str, None], None)
@@ -1545,6 +1599,8 @@ ABGAttribute.GRID = ABGAttribute.define("grid", [ABGGrid, None], ABGGrid.validat
 ABGAttribute.GRID_SIZE = ABGAttribute.define("gridSize", int, lambda x, y : (x > 0), fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.GROUP_ID = ABGAttribute.define("groupId", str, None)
 ABGAttribute.HEIGHT = ABGAttribute.define("height", [int, float], lambda x, y : (x > 0), fromJson = ABGAttribute.ensureNumeral)
+ABGAttribute.THICKNESS = ABGAttribute.define("thickness", [int, None], lambda x, y : x is None or (x > 0), fromJson = ABGAttribute.ensureNumeral)
+ABGAttribute.SECONDARY_SIZE = ABGAttribute.define("secondarySize", [int, None], lambda x, y : x is None or (x > 0), fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.HOLD_ITEMS = ABGAttribute.define("holdItems", bool, None)
 ABGAttribute.ID = ABGAttribute.define("id", str, None) # Don't know yet.
 ABGAttribute.IMAGES = ABGAttribute.define("images", list, ABGLayerImage.validateList, ABGLayerImage)
@@ -1589,7 +1645,7 @@ ABGAttribute.TIMESTAMP = ABGAttribute.define("timestamp", int, lambda x, y : (x 
 ABGAttribute.TOP = ABGAttribute.define("top", [int, float], None, fromJson = ABGAttribute.ensureNumeral)
 ABGAttribute.TRANSLATIONS = ABGAttribute.define("translations", list, ABGTranslation.validateList, fromJson = ABGTranslation)
 ABGAttribute.TYPE = ABGAttribute.define("type", str, None)
-ABGAttribute.UID = ABGAttribute.define("uid", str, None) # Don't know yet.
+ABGAttribute.UID = ABGAttribute.define("uid", str, None)
 ABGAttribute.UNFLIPPED_FOR = ABGAttribute.define("unflippedFor", [list, None], None) # Don't know yet
 ABGAttribute.VALUE = ABGAttribute.define("value", str, None)
 ABGAttribute.VERTICAL = ABGAttribute.define("vertical", bool, None)
